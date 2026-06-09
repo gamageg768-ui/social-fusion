@@ -1,0 +1,48 @@
+{
+  "name": "SocialFusion",
+  "short_name": "SocialFusion",
+  "description": "The ultimate social platform — connect, share, and discover",
+  "theme_color": "#38BDF8",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["social", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Home Feed",
+      "url": "/",
+      "description": "View your home feed"
+    },
+    {
+      "name": "Explore",
+      "url": "/explore",
+      "description": "Discover new content"
+    },
+    {
+      "name": "Reels",
+      "url": "/reels",
+      "description": "Watch reels"
+    },
+    {
+      "name": "Messages",
+      "url": "/messages",
+      "description": "View your messages"
+    }
+  ]
+}

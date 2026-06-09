@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int      @id @default(autoincrement())
+  username        String   @unique
+  name            String
+  email           String   @unique
+  avatar          String   @default("")
+  cover           String   @default("")
+  bio             String   @default("")
+  followers_count Int      @default(0)
+  following_count Int      @default(0)
+  posts_count     Int      @default(0)
+  is_verified     Boolean  @default(false)
+  location        String   @default("")
+  website         String   @default("")
+  created_at      DateTime @default(now())
+
+  posts              Post[]
+  stories            Story[]
+  comments           Comment[]
+  sent_messages      Message[]      @relation("SentMessages")
+  received_messages  Message[]      @relation("ReceivedMessages")
+  reels              Reel[]
+  notifications      Notification[] @relation("NotificationUser")
+  actor_notifs       Notification[] @relation("NotificationActor")
+
+  @@map("users")
+}
+
+model Post {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  content        String   @default("")
+  image_url      String   @default("")
+  likes_count    Int      @default(0)
+  comments_count Int      @default(0)
+  shares_count   Int      @default(0)
+  post_type      String   @default("post")
+  created_at     DateTime @default(now())
+
+  user     User      @relation(fields: [user_id], references: [id])
+  comments Comment[]
+
+  @@map("posts")
+}
+
+model Story {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  image_url  String
+  viewed     Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("stories")
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  post_id     Int
+  user_id     Int
+  content     String
+  likes_count Int      @default(0)
+  created_at  DateTime @default(now())
+
+  post Post @relation(fields: [post_id], references: [id])
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("comments")
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  sender_id   Int
+  receiver_id Int
+  content     String
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  sender   User @relation("SentMessages", fields: [sender_id], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiver_id], references: [id])
+
+  @@map("messages")
+}
+
+model Reel {
+  id             Int      @id @default(autoincrement())
+  user_id        Int
+  title          String   @default("")
+  thumbnail_url  String
+  audio          String   @default("")
+  likes_count    Int      @default(0)
+  comments_count Int      @default(0)
+  views_count    Int      @default(0)
+  created_at     DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("reels")
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  actor_id    Int
+  notif_type  String
+  content     String   @default("")
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  user  User @relation("NotificationUser", fields: [user_id], references: [id])
+  actor User @relation("NotificationActor", fields: [actor_id], references: [id])
+
+  @@map("notifications")
+}
