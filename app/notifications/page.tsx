@@ -34,7 +34,7 @@ export default function Notifications() {
   ].filter(g => g.items.length > 0);
 
   return (
-    <div style={{ maxWidth: 620, margin: '0 auto' }}>
+    <div style={{ maxWidth: 680, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h1 style={{ fontFamily: 'Syne, sans-serif', fontWeight: 800, fontSize: '1.4rem', color: 'var(--gray-900)' }}>

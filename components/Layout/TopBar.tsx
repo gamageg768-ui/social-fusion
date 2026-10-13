@@ -2,10 +2,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { useNotifications } from '@/lib/NotificationContext';
 
 export function TopBar() {
   const [q, setQ] = useState('');
   const router = useRouter();
+  const { unreadCount, clearCount } = useNotifications();
 
   return (
     <header className="topbar" style={{
@@ -13,7 +15,7 @@ export function TopBar() {
       padding: '0 20px', display: 'flex', alignItems: 'center', gap: 16,
       height: 'var(--topbar-height)', position: 'sticky', top: 0, zIndex: 100,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="mobile-logo">
+      <div style={{ alignItems: 'center', gap: 8 }} className="mobile-logo">
         <div style={{
           width: 32, height: 32, borderRadius: 8,
           background: 'linear-gradient(135deg, var(--blue-400), var(--blue-600))',
@@ -48,12 +50,26 @@ export function TopBar() {
       </div>
 
       <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
-        <button className="btn btn-ghost btn-icon" title="Notifications">
+        <Link href="/notifications" onClick={clearCount}
+          className="btn btn-ghost btn-icon"
+          title="Notifications"
+          style={{ position: 'relative', textDecoration: 'none' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
           </svg>
-        </button>
+          {unreadCount > 0 && (
+            <span style={{
+              position: 'absolute', top: 2, right: 2,
+              width: 16, height: 16, background: 'var(--red-500)',
+              borderRadius: '50%', border: '2px solid white',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '0.6rem', fontWeight: 700, color: 'white',
+            }}>
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </Link>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="https://picsum.photos/seed/1114/32/32" alt="You" className="avatar" style={{ width: 34, height: 34, cursor: 'pointer' }} />
       </div>
@@ -75,7 +91,7 @@ export function BottomNav() {
   return (
     <nav style={{
       background: 'var(--white)', borderTop: '1px solid var(--blue-100)',
-      display: 'flex', alignItems: 'center',
+      alignItems: 'center',
       height: 'var(--bottomnav-height)',
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 200,
     }} className="bottom-nav-mobile">

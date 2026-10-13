@@ -19,35 +19,128 @@ model User {
   following_count Int      @default(0)
   posts_count     Int      @default(0)
   is_verified     Boolean  @default(false)
-  location        String   @default("")
-  website         String   @default("")
-  created_at      DateTime @default(now())
+  is_private      Boolean   @default(false)
+  location        String    @default("")
+  website         String    @default("")
+  last_seen       DateTime?
+  status_emoji    String    @default("")
+  status_text     String    @default("")
+  presence        String    @default("online")
+  created_at      DateTime  @default(now())
 
-  posts              Post[]
-  stories            Story[]
-  comments           Comment[]
-  sent_messages      Message[]      @relation("SentMessages")
-  received_messages  Message[]      @relation("ReceivedMessages")
-  reels              Reel[]
-  notifications      Notification[] @relation("NotificationUser")
-  actor_notifs       Notification[] @relation("NotificationActor")
+  posts                        Post[]
+  stories                      Story[]
+  comments                     Comment[]
+  sent_messages                Message[]          @relation("SentMessages")
+  received_messages            Message[]          @relation("ReceivedMessages")
+  reels                        Reel[]
+  notifications                Notification[]     @relation("NotificationUser")
+  actor_notifs                 Notification[]     @relation("NotificationActor")
+  followers                    Follow[]           @relation("Following")
+  following                    Follow[]           @relation("Follower")
+  bookmarks                    Bookmark[]
+  likes                        Like[]
+  reports                      Report[]           @relation("Reporter")
+  follow_requests_sent         FollowRequest[]    @relation("FollowRequester")
+  follow_requests_received     FollowRequest[]    @relation("FollowTarget")
+  lists                        UserList[]
+  list_memberships             UserListMember[]
+  message_reactions            MessageReaction[]
+  message_pins                 MessagePin[]
+  message_stars                MessageStar[]
+  conversation_metas_as_user   ConversationMeta[] @relation("ConvMetaUser")
+  conversation_metas_as_partner ConversationMeta[] @relation("ConvMetaPartner")
+  poll_votes                   PollVote[]
+  post_reactions               PostReaction[]
+  post_poll_votes              PostPollVote[]
+  not_interested               NotInterested[]
+  muted_words                  MutedWord[]
+  collections                  Collection[]
+  collab_posts      Post[]          @relation("CollabPosts")
+  achievements      Achievement[]
+  tips_sent         Tip[]           @relation("TipSender")
+  tips_received     Tip[]           @relation("TipReceiver")
+  highlights        Highlight[]
+  channel_owner     Channel[]
+  channel_subs      ChannelSubscription[]
+  community_member  CommunityMember[]
+  community_owner   Community[]
+  event_rsvps       EventRsvp[]
+  events_created    Event[]
+  impressions       PostImpression[]
+  dwell_times       PostDwellTime[]
+  muted_users       MutedUser[]          @relation("MutedBy")
+  muted_by          MutedUser[]          @relation("MutedUser")
+  feed_mix          String               @default("balanced")
+  post_skips        PostSkip[]
+  creator_skips     PostSkip[]           @relation("SkipCreator")
+  reaction_poll_votes  PostReactionVote[]
+  post_annotations     PostAnnotation[]
+  expertise_tags       String         @default("[]") // F10: JSON array of claimed topics
+  expertise_claims     ExpertiseClaim[]              // F10: claims this user made
+  expertise_votes      ExpertiseVote[]               // F10: votes this user cast
+  accountability_votes AccountabilityVote[]           // F5: accountability votes cast
 
   @@map("users")
 }
 
 model Post {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   user_id        Int
-  content        String   @default("")
-  image_url      String   @default("")
-  likes_count    Int      @default(0)
-  comments_count Int      @default(0)
-  shares_count   Int      @default(0)
-  post_type      String   @default("post")
-  created_at     DateTime @default(now())
+  content        String    @default("")
+  image_url      String    @default("")
+  alt_text       String    @default("")
+  likes_count    Int       @default(0)
+  comments_count Int       @default(0)
+  shares_count   Int       @default(0)
+  view_count     Int       @default(0)
+  post_type      String    @default("post")
+  visibility     String    @default("everyone")
+  ref_post_id    Int?
+  quote_content  String    @default("")
+  is_pinned      Boolean   @default(false)
+  scheduled_at   DateTime?
+  thread_id      Int?
+  thread_index   Int       @default(0)
+  created_at     DateTime  @default(now())
 
-  user     User      @relation(fields: [user_id], references: [id])
-  comments Comment[]
+  user           User            @relation(fields: [user_id], references: [id])
+  comments       Comment[]
+  bookmarks      Bookmark[]
+  likes          Like[]
+  reports        Report[]
+  ref_post       Post?           @relation("PostRef", fields: [ref_post_id], references: [id])
+  ref_posts      Post[]          @relation("PostRef")
+  reactions      PostReaction[]
+  post_poll      PostPoll?
+  not_interested NotInterested[]
+  collection_posts CollectionPost[]
+  image_urls     String    @default("")   // JSON array of extra image URLs
+  is_sensitive   Boolean   @default(false)
+  location_name  String    @default("")
+  expires_at     DateTime?
+  collab_user_id Int?
+  collab_user    User?     @relation("CollabPosts", fields: [collab_user_id], references: [id])
+  highlight_stories HighlightStory[]
+  community_posts   CommunityPost[]
+  channel_posts     ChannelPost[]
+  impressions       PostImpression[]
+  dwell_times       PostDwellTime[]
+  post_skips        PostSkip[]
+  avg_comment_length Float @default(0)
+  is_anonymous      Boolean  @default(false)
+  reaction_poll     String   @default("")   // JSON: { question, options:[{label,emoji}] }
+  reaction_poll_votes PostReactionVote[]
+  annotations        PostAnnotation[]
+  locked_until       DateTime?              // F4: capsule unlock date
+  commitment_deadline DateTime?             // F5: commitment due date
+  commitment_update  String   @default("") // F5: author progress update
+  commitment_votes   AccountabilityVote[]   // F5: peer votes
+  live_widget        String   @default("") // F6: JSON widget config
+  conversation_depth Float    @default(0)  // F7: computed depth score 0-10
+  is_stale           Boolean  @default(false) // F9: stale claim flag
+  persona            String   @default("") // F12: persona tag
+  post_autopsy       PostAutopsy?           // F11: autopsy relation
 
   @@map("posts")
 }
@@ -60,6 +153,7 @@ model Story {
   created_at DateTime @default(now())
 
   user User @relation(fields: [user_id], references: [id])
+  highlight_stories HighlightStory[]
 
   @@map("stories")
 }
@@ -70,26 +164,128 @@ model Comment {
   user_id     Int
   content     String
   likes_count Int      @default(0)
+  parent_id   Int?
   created_at  DateTime @default(now())
 
-  post Post @relation(fields: [post_id], references: [id])
-  user User @relation(fields: [user_id], references: [id])
+  stance     String   @default("") // F8: "agree" | "disagree" | ""
+
+  post    Post      @relation(fields: [post_id], references: [id])
+  user    User      @relation(fields: [user_id], references: [id])
+  parent  Comment?  @relation("CommentReply", fields: [parent_id], references: [id])
+  replies Comment[] @relation("CommentReply")
 
   @@map("comments")
 }
 
 model Message {
-  id          Int      @id @default(autoincrement())
-  sender_id   Int
-  receiver_id Int
-  content     String
-  is_read     Boolean  @default(false)
-  created_at  DateTime @default(now())
+  id           Int       @id @default(autoincrement())
+  sender_id    Int
+  receiver_id  Int
+  content      String
+  is_read      Boolean   @default(false)
+  message_type String    @default("text")
+  image_url    String    @default("")
+  reply_to_id  Int?
+  is_forwarded Boolean   @default(false)
+  delivered_at DateTime?
+  is_edited    Boolean   @default(false)
+  edited_at    DateTime?
+  scheduled_at DateTime?
+  poll_id      Int?
+  created_at   DateTime  @default(now())
 
-  sender   User @relation("SentMessages", fields: [sender_id], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiver_id], references: [id])
+  sender    User              @relation("SentMessages",    fields: [sender_id],    references: [id])
+  receiver  User              @relation("ReceivedMessages", fields: [receiver_id], references: [id])
+  reactions MessageReaction[]
+  reply_to  Message?          @relation("MessageReplies",  fields: [reply_to_id],  references: [id])
+  replies   Message[]         @relation("MessageReplies")
+  pins      MessagePin[]
+  stars     MessageStar[]
+  poll      Poll?             @relation(fields: [poll_id], references: [id])
 
   @@map("messages")
+}
+
+model Poll {
+  id         Int        @id @default(autoincrement())
+  question   String
+  options    String
+  created_at DateTime   @default(now())
+
+  messages Message[]
+  votes    PollVote[]
+
+  @@map("polls")
+}
+
+model PollVote {
+  id         Int      @id @default(autoincrement())
+  poll_id    Int
+  user_id    Int
+  option_idx Int
+  created_at DateTime @default(now())
+
+  poll Poll @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id])
+
+  @@unique([poll_id, user_id])
+  @@map("poll_votes")
+}
+
+model MessageReaction {
+  id         Int      @id @default(autoincrement())
+  message_id Int
+  user_id    Int
+  emoji      String
+  created_at DateTime @default(now())
+
+  message Message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id],    references: [id])
+
+  @@unique([message_id, user_id])
+  @@map("message_reactions")
+}
+
+model MessagePin {
+  id         Int      @id @default(autoincrement())
+  message_id Int
+  user_id    Int
+  created_at DateTime @default(now())
+
+  message Message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@unique([message_id, user_id])
+  @@map("message_pins")
+}
+
+model MessageStar {
+  id         Int      @id @default(autoincrement())
+  message_id Int
+  user_id    Int
+  created_at DateTime @default(now())
+
+  message Message @relation(fields: [message_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@unique([message_id, user_id])
+  @@map("message_stars")
+}
+
+model ConversationMeta {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  partner_id  Int
+  is_archived     Boolean  @default(false)
+  is_muted        Boolean  @default(false)
+  disappear_after String   @default("off")
+  created_at      DateTime @default(now())
+
+  user    User @relation("ConvMetaUser",    fields: [user_id],    references: [id])
+  partner User @relation("ConvMetaPartner", fields: [partner_id], references: [id])
+
+  @@unique([user_id, partner_id])
+  @@map("conversation_meta")
 }
 
 model Reel {
@@ -121,4 +317,513 @@ model Notification {
   actor User @relation("NotificationActor", fields: [actor_id], references: [id])
 
   @@map("notifications")
+}
+
+model Follow {
+  id           Int      @id @default(autoincrement())
+  follower_id  Int
+  following_id Int
+  created_at   DateTime @default(now())
+
+  follower  User @relation("Follower", fields: [follower_id], references: [id])
+  following User @relation("Following", fields: [following_id], references: [id])
+
+  @@unique([follower_id, following_id])
+  @@map("follows")
+}
+
+model FollowRequest {
+  id           Int      @id @default(autoincrement())
+  requester_id Int
+  target_id    Int
+  status       String   @default("pending")
+  created_at   DateTime @default(now())
+
+  requester User @relation("FollowRequester", fields: [requester_id], references: [id])
+  target    User @relation("FollowTarget", fields: [target_id], references: [id])
+
+  @@unique([requester_id, target_id])
+  @@map("follow_requests")
+}
+
+model Bookmark {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  post_id    Int
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+  post Post @relation(fields: [post_id], references: [id])
+
+  @@unique([user_id, post_id])
+  @@map("bookmarks")
+}
+
+model Like {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  post_id    Int
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+  post Post @relation(fields: [post_id], references: [id])
+
+  @@unique([user_id, post_id])
+  @@map("likes")
+}
+
+model Report {
+  id          Int      @id @default(autoincrement())
+  reporter_id Int
+  post_id     Int
+  reason      String
+  status      String   @default("pending")
+  created_at  DateTime @default(now())
+
+  reporter User @relation("Reporter", fields: [reporter_id], references: [id])
+  post     Post @relation(fields: [post_id], references: [id])
+
+  @@map("reports")
+}
+
+model UserList {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  name             String
+  is_close_friends Boolean  @default(false)
+  created_at       DateTime @default(now())
+
+  owner   User             @relation(fields: [user_id], references: [id])
+  members UserListMember[]
+
+  @@map("user_lists")
+}
+
+model UserListMember {
+  id         Int      @id @default(autoincrement())
+  list_id    Int
+  user_id    Int
+  created_at DateTime @default(now())
+
+  list UserList @relation(fields: [list_id], references: [id])
+  user User     @relation(fields: [user_id], references: [id])
+
+  @@unique([list_id, user_id])
+  @@map("user_list_members")
+}
+
+model PostReaction {
+  id         Int      @id @default(autoincrement())
+  post_id    Int
+  user_id    Int
+  emoji      String
+  created_at DateTime @default(now())
+
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id])
+
+  @@unique([post_id, user_id])
+  @@map("post_reactions")
+}
+
+model PostPoll {
+  id         Int      @id @default(autoincrement())
+  post_id    Int      @unique
+  question   String
+  options    String
+  ends_at    DateTime
+  created_at DateTime @default(now())
+
+  post  Post          @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  votes PostPollVote[]
+
+  @@map("post_polls")
+}
+
+model PostPollVote {
+  id         Int      @id @default(autoincrement())
+  poll_id    Int
+  user_id    Int
+  option_idx Int
+  created_at DateTime @default(now())
+
+  poll PostPoll @relation(fields: [poll_id], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [user_id], references: [id])
+
+  @@unique([poll_id, user_id])
+  @@map("post_poll_votes")
+}
+
+model MutedWord {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  word       String
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, word])
+  @@map("muted_words")
+}
+
+model NotInterested {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  post_id    Int
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id])
+  @@map("not_interested")
+}
+
+model Collection {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  name       String
+  created_at DateTime @default(now())
+
+  user  User             @relation(fields: [user_id], references: [id])
+  posts CollectionPost[]
+
+  @@map("collections")
+}
+
+model CollectionPost {
+  id            Int      @id @default(autoincrement())
+  collection_id Int
+  post_id       Int
+  created_at    DateTime @default(now())
+
+  collection Collection @relation(fields: [collection_id], references: [id], onDelete: Cascade)
+  post       Post        @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@unique([collection_id, post_id])
+  @@map("collection_posts")
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  user_id     Int
+  title       String
+  description String   @default("")
+  cover_url   String   @default("")
+  location    String   @default("")
+  starts_at   DateTime
+  ends_at     DateTime?
+  created_at  DateTime @default(now())
+
+  user  User        @relation(fields: [user_id], references: [id])
+  rsvps EventRsvp[]
+
+  @@map("events")
+}
+
+model EventRsvp {
+  id         Int      @id @default(autoincrement())
+  event_id   Int
+  user_id    Int
+  status     String   @default("going")
+  created_at DateTime @default(now())
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id])
+
+  @@unique([event_id, user_id])
+  @@map("event_rsvps")
+}
+
+model Community {
+  id          Int      @id @default(autoincrement())
+  owner_id    Int
+  name        String
+  description String   @default("")
+  avatar_url  String   @default("")
+  is_private  Boolean  @default(false)
+  created_at  DateTime @default(now())
+
+  owner   User              @relation(fields: [owner_id], references: [id])
+  members CommunityMember[]
+  posts   CommunityPost[]
+
+  @@map("communities")
+}
+
+model CommunityMember {
+  id           Int      @id @default(autoincrement())
+  community_id Int
+  user_id      Int
+  role         String   @default("member")
+  created_at   DateTime @default(now())
+
+  community Community @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [user_id], references: [id])
+
+  @@unique([community_id, user_id])
+  @@map("community_members")
+}
+
+model CommunityPost {
+  id           Int      @id @default(autoincrement())
+  community_id Int
+  post_id      Int
+  created_at   DateTime @default(now())
+
+  community Community @relation(fields: [community_id], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@unique([community_id, post_id])
+  @@map("community_posts")
+}
+
+model Channel {
+  id          Int      @id @default(autoincrement())
+  owner_id    Int
+  name        String
+  description String   @default("")
+  avatar_url  String   @default("")
+  created_at  DateTime @default(now())
+
+  owner         User                  @relation(fields: [owner_id], references: [id])
+  subscriptions ChannelSubscription[]
+  posts         ChannelPost[]
+
+  @@map("channels")
+}
+
+model ChannelSubscription {
+  id         Int      @id @default(autoincrement())
+  channel_id Int
+  user_id    Int
+  created_at DateTime @default(now())
+
+  channel Channel @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [user_id], references: [id])
+
+  @@unique([channel_id, user_id])
+  @@map("channel_subscriptions")
+}
+
+model ChannelPost {
+  id         Int      @id @default(autoincrement())
+  channel_id Int
+  post_id    Int
+  created_at DateTime @default(now())
+
+  channel   Channel           @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  post      Post              @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  reactions ChannelReaction[]
+
+  @@unique([channel_id, post_id])
+  @@map("channel_posts")
+}
+
+model ChannelReaction {
+  id              Int      @id @default(autoincrement())
+  channel_post_id Int
+  user_id         Int
+  emoji           String
+  created_at      DateTime @default(now())
+
+  channel_post ChannelPost @relation(fields: [channel_post_id], references: [id], onDelete: Cascade)
+
+  @@map("channel_reactions")
+}
+
+model Highlight {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  name       String
+  cover_url  String   @default("")
+  created_at DateTime @default(now())
+
+  user    User             @relation(fields: [user_id], references: [id])
+  stories HighlightStory[]
+
+  @@map("highlights")
+}
+
+model HighlightStory {
+  id           Int      @id @default(autoincrement())
+  highlight_id Int
+  story_id     Int?
+  image_url    String   @default("")
+  post_id      Int?
+  created_at   DateTime @default(now())
+
+  highlight Highlight @relation(fields: [highlight_id], references: [id], onDelete: Cascade)
+  story     Story?    @relation(fields: [story_id], references: [id])
+  post      Post?     @relation(fields: [post_id], references: [id])
+
+  @@map("highlight_stories")
+}
+
+model Achievement {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  badge_type String
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, badge_type])
+  @@map("achievements")
+}
+
+model Tip {
+  id          Int      @id @default(autoincrement())
+  sender_id   Int
+  receiver_id Int
+  amount      Int
+  message     String   @default("")
+  created_at  DateTime @default(now())
+
+  sender   User @relation("TipSender",   fields: [sender_id],   references: [id])
+  receiver User @relation("TipReceiver", fields: [receiver_id], references: [id])
+
+  @@map("tips")
+}
+
+model PostImpression {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  post_id    Int
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, post_id])
+  @@map("post_impressions")
+}
+
+model PostDwellTime {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  post_id    Int
+  seconds    Int
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@map("post_dwell_times")
+}
+
+model MutedUser {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  muted_id   Int
+  created_at DateTime @default(now())
+
+  user  User @relation("MutedBy",   fields: [user_id],  references: [id])
+  muted User @relation("MutedUser", fields: [muted_id], references: [id])
+
+  @@unique([user_id, muted_id])
+  @@map("muted_users")
+}
+
+model PostSkip {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  post_id    Int
+  creator_id Int
+  hashtags   String   @default("[]")
+  created_at DateTime @default(now())
+
+  user    User @relation(fields: [user_id], references: [id])
+  post    Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  creator User @relation("SkipCreator", fields: [creator_id], references: [id])
+
+  @@map("post_skips")
+}
+
+model PostReactionVote {
+  id         Int      @id @default(autoincrement())
+  post_id    Int
+  user_id    Int
+  option_idx Int
+  created_at DateTime @default(now())
+
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id])
+
+  @@unique([post_id, user_id])
+  @@map("post_reaction_votes")
+}
+
+model PostAnnotation {
+  id            Int      @id @default(autoincrement())
+  post_id       Int
+  user_id       Int
+  selected_text String
+  start_offset  Int      @default(0)
+  end_offset    Int      @default(0)
+  note          String
+  visibility    String   @default("private")
+  circle_name   String   @default("")
+  created_at    DateTime @default(now())
+
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id])
+
+  @@map("post_annotations")
+}
+
+model AccountabilityVote {
+  id         Int      @id @default(autoincrement())
+  post_id    Int
+  user_id    Int
+  kept       Boolean
+  created_at DateTime @default(now())
+
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id])
+
+  @@unique([post_id, user_id])
+  @@map("accountability_votes")
+}
+
+model ExpertiseClaim {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  topic      String
+  created_at DateTime @default(now())
+
+  user  User            @relation(fields: [user_id], references: [id])
+  votes ExpertiseVote[]
+
+  @@unique([user_id, topic])
+  @@map("expertise_claims")
+}
+
+model ExpertiseVote {
+  id         Int      @id @default(autoincrement())
+  claim_id   Int
+  voter_id   Int
+  created_at DateTime @default(now())
+
+  claim ExpertiseClaim @relation(fields: [claim_id], references: [id], onDelete: Cascade)
+  voter User           @relation(fields: [voter_id], references: [id])
+
+  @@unique([claim_id, voter_id])
+  @@map("expertise_votes")
+}
+
+model PostAutopsy {
+  id             Int      @id @default(autoincrement())
+  post_id        Int      @unique
+  peak_likes     Int      @default(0)
+  peak_comments  Int      @default(0)
+  peak_shares    Int      @default(0)
+  total_views    Int      @default(0)
+  avg_dwell_secs Float    @default(0)
+  top_reactions  String   @default("[]")
+  archived_at    DateTime @default(now())
+
+  post Post @relation(fields: [post_id], references: [id], onDelete: Cascade)
+
+  @@map("post_autopsies")
 }

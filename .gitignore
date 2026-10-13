@@ -23,3 +23,6 @@ public/workbox-*.js.map
 # Build
 build/
 dist/
+
+.vercel
+.env*

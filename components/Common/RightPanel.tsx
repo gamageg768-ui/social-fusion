@@ -2,29 +2,41 @@
 import { useEffect, useState } from 'react';
 import type { User } from '@/types';
 
-const trends = [
-  { tag: '#WebDev', posts: '48.2K posts' },
-  { tag: '#TechNews', posts: '31.5K posts' },
-  { tag: '#Photography', posts: '76.1K posts' },
-  { tag: '#AIArt', posts: '112K posts' },
-  { tag: '#FitnessGoals', posts: '55.8K posts' },
-  { tag: '#TravelVibes', posts: '89.3K posts' },
-];
+type TrendItem = { tag: string; count: number; trend: 'rising' | 'stable' | 'falling' };
+
+const TREND_ICONS = ['🔥', '💡', '📸', '🤖', '💪', '✈️', '🎮', '🎵', '🌱', '🚀'];
+const TREND_LABELS: Record<string, string> = { rising: '↑', stable: '→', falling: '↓' };
 
 export default function RightPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [followed, setFollowed] = useState<Set<number>>(new Set());
+  const [trends, setTrends] = useState<TrendItem[]>([]);
 
   useEffect(() => {
-    fetch('/api/users/suggestions').then(r => r.json()).then((d: User[]) => setUsers(d.slice(0, 5))).catch(console.error);
+    fetch('/api/users/suggestions')
+      .then(r => r.json())
+      .then((d: User[]) => setUsers(d.slice(0, 5)))
+      .catch(console.error);
+    fetch('/api/trending')
+      .then(r => r.json())
+      .then((d: { trending: TrendItem[] }) => setTrends(d.trending ?? []))
+      .catch(console.error);
   }, []);
 
-  const toggle = (id: number) => {
-    setFollowed(prev => {
-      const n = new Set(prev);
-      n.has(id) ? n.delete(id) : n.add(id);
-      return n;
-    });
+  const toggle = async (id: number) => {
+    const res = await fetch(`/api/users/${id}/follow`, { method: 'POST' }).then(r => r.json()).catch(() => null);
+    if (res) {
+      setFollowed(prev => {
+        const n = new Set(prev);
+        res.following ? n.add(id) : n.delete(id);
+        return n;
+      });
+      setUsers(prev => prev.map(u =>
+        u.id === id
+          ? { ...u, followers_count: u.followers_count + (res.following ? 1 : -1) }
+          : u
+      ));
+    }
   };
 
   return (
@@ -33,22 +45,35 @@ export default function RightPanel() {
         <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 12, color: 'var(--gray-800)', fontFamily: 'Syne, sans-serif' }}>
           🔥 Trending Now
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {trends.map((t, i) => (
-            <div key={t.tag} style={{ padding: '8px 10px', borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--blue-50)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>#{i + 1} Trending</div>
-                  <div style={{ fontWeight: 700, color: 'var(--blue-600)', fontSize: '0.9rem' }}>{t.tag}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--gray-400)' }}>{t.posts}</div>
+        {trends.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[1,2,3,4,5].map(i => <div key={i} className="skeleton" style={{ height: 48, borderRadius: 8 }} />)}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {trends.map((t, i) => (
+              <a key={t.tag} href={`/explore?q=${encodeURIComponent(t.tag)}`} style={{ textDecoration: 'none' }}>
+                <div style={{ padding: '8px 10px', borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--blue-50)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--gray-400)' }}>#{i + 1} Trending</div>
+                      <div style={{ fontWeight: 700, color: 'var(--blue-600)', fontSize: '0.9rem' }}>{t.tag}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--gray-400)' }}>
+                        {t.count} post{t.count !== 1 ? 's' : ''}{' '}
+                        <span style={{ color: t.trend === 'rising' ? 'var(--green-500)' : t.trend === 'falling' ? 'var(--red-400)' : 'var(--gray-400)' }}>
+                          {TREND_LABELS[t.trend]}
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '1.2rem' }}>{TREND_ICONS[i] ?? '📌'}</span>
+                  </div>
                 </div>
-                <span style={{ fontSize: '1.2rem' }}>{['🔥','💡','📸','🤖','💪','✈️'][i]}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="card" style={{ padding: 16 }}>
@@ -82,7 +107,7 @@ export default function RightPanel() {
       </div>
 
       <div style={{ fontSize: '0.72rem', color: 'var(--gray-300)', padding: '0 4px' }}>
-        © 2024 SocialFusion · Privacy · Terms · About
+        © 2025 SocialFusion · Privacy · Terms · About
       </div>
     </div>
   );
