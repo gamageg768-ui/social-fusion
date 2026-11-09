@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/utils';
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const prisma = await ensureDb();
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const autopsy = await prisma.postAutopsy.findUnique({ where: { post_id: postId } });
   if (!autopsy) return NextResponse.json(null);
@@ -22,6 +23,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: {

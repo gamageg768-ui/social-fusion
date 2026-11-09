@@ -8,6 +8,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { option_idx } = await req.json().catch(() => ({}));
 
   const poll = await prisma.postPoll.findUnique({ where: { post_id: postId } });

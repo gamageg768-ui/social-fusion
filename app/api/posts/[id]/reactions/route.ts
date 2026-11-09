@@ -6,6 +6,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const prisma = await ensureDb();
   const me = await getCurrentUser();
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const reactions = await prisma.postReaction.findMany({
     where: { post_id: postId },

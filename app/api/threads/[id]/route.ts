@@ -7,6 +7,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const me = await getCurrentUser();
   const meId = me?.id ?? -1;
   const threadId = Number(params.id);
+  if (isNaN(threadId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const posts = await prisma.post.findMany({
     where: { thread_id: threadId },

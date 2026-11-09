@@ -8,6 +8,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json([]);
 
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const annotations = await prisma.postAnnotation.findMany({
     where: { post_id: postId, user_id: me.id },
     orderBy: { created_at: 'desc' },
@@ -25,6 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { selected_text, start_offset, end_offset, note, visibility, circle_name } = await req.json();
 
   if (!note?.trim() || !selected_text?.trim()) {

@@ -6,8 +6,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const prisma = await ensureDb();
   const me = await getCurrentUser();
   const meId = me?.id ?? -1;
+  const parsedId = Number(params.id);
+  if (isNaN(parsedId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const items = await prisma.communityPost.findMany({
-    where: { community_id: Number(params.id) },
+    where: { community_id: parsedId },
     include: { post: { include: { user: true, likes: { where: { user_id: meId }, take: 1 }, bookmarks: { where: { user_id: meId }, take: 1 }, ref_post: { include: { user: true } }, reactions: true, post_poll: { include: { votes: true } } } } },
     orderBy: { created_at: 'desc' },
   });
@@ -19,6 +21,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const comId = Number(params.id);
+  if (isNaN(comId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const member = await prisma.communityMember.findUnique({ where: { community_id_user_id: { community_id: comId, user_id: me.id } } });
   if (!member) return NextResponse.json({ error: 'Not a member' }, { status: 403 });
   const data = await req.json().catch(() => ({}));

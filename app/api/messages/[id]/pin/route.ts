@@ -9,6 +9,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const messageId = Number(params.id);
+  if (isNaN(messageId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const existing = await prisma.messagePin.findUnique({
     where: { message_id_user_id: { message_id: messageId, user_id: me.id } },

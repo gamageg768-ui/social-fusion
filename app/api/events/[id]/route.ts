@@ -22,8 +22,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const prisma = await ensureDb();
   const me = await getCurrentUser();
   const meId = me?.id ?? -1;
+  const parsedId = Number(params.id);
+  if (isNaN(parsedId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const event = await prisma.event.findUnique({
-    where: { id: Number(params.id) },
+    where: { id: parsedId },
     include: { user: true, rsvps: { include: { user: true } }, _count: { select: { rsvps: true } } },
   });
   if (!event) return NextResponse.json({ error: 'Not found' }, { status: 404 });

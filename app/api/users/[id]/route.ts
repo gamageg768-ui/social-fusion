@@ -6,6 +6,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const prisma = await ensureDb();
   const me = await getCurrentUser();
   const userId = Number(params.id);
+  if (isNaN(userId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });

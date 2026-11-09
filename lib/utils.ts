@@ -1,6 +1,13 @@
 import { prisma } from './prisma';
+import type { NextRequest } from 'next/server';
 
-export async function getCurrentUser() {
+const DEV_TOKEN = process.env.DEV_AUTH_TOKEN;
+
+export async function getCurrentUser(req?: NextRequest) {
+  if (DEV_TOKEN && req) {
+    const token = req.headers.get('x-dev-token');
+    if (token !== DEV_TOKEN) return null;
+  }
   return (
     (await prisma.user.findFirst({ where: { username: 'you' } })) ??
     (await prisma.user.findFirst())
@@ -9,7 +16,22 @@ export async function getCurrentUser() {
 
 export function serializeUser(u: any) {
   return {
-    ...u,
+    id: u.id,
+    username: u.username,
+    name: u.name,
+    avatar: u.avatar,
+    cover: u.cover,
+    bio: u.bio,
+    followers_count: u.followers_count,
+    following_count: u.following_count,
+    posts_count: u.posts_count,
+    is_verified: u.is_verified,
+    is_private: u.is_private,
+    location: u.location,
+    website: u.website,
+    presence: u.presence,
+    status_emoji: u.status_emoji,
+    status_text: u.status_text,
     created_at: u.created_at.toISOString(),
     last_seen: u.last_seen ? u.last_seen.toISOString() : null,
   };

@@ -8,6 +8,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const messageId = Number(params.id);
+  if (isNaN(messageId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { emoji } = await req.json();
 
   const existing = await prisma.messageReaction.findUnique({

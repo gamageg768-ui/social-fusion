@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDb } from '@/lib/db';
 import { getCurrentUser, serializeComment } from '@/lib/utils';
+import { CreateCommentSchema } from '@/lib/validation';
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const prisma = await ensureDb();
+  const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const comments = await prisma.comment.findMany({
-    where: { post_id: Number(params.id), parent_id: null },
+    where: { post_id: postId, parent_id: null },
     include: {
       user: true,
       replies: { include: { user: true }, orderBy: { created_at: 'asc' } },
@@ -23,16 +26,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
-  const { content, parent_id, stance } = await req.json();
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  const parsed = CreateCommentSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 400 });
+  const { content, parent_id, stance } = parsed.data;
 
   const comment = await prisma.comment.create({
     data: {
       post_id: postId,
       user_id: me.id,
       content,
-      parent_id: parent_id ? Number(parent_id) : null,
-      stance: stance || '',
+      parent_id: parent_id ?? null,
+      stance,
     },
     include: { user: true, replies: { include: { user: true } } },
   });

@@ -7,8 +7,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const me = await getCurrentUser();
   if (!me) return NextResponse.json([]);
 
+  const parsedId = Number(params.id);
+  if (isNaN(parsedId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const members = await prisma.userListMember.findMany({
-    where: { list_id: Number(params.id) },
+    where: { list_id: parsedId },
     include: { user: true },
     orderBy: { created_at: 'asc' },
   });

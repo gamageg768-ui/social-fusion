@@ -8,6 +8,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const mutedId = Number(params.id);
+  if (isNaN(mutedId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   if (!mutedId || mutedId === me.id) return NextResponse.json({ error: 'Invalid' }, { status: 400 });
 
   const existing = await prisma.mutedUser.findUnique({

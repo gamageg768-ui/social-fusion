@@ -8,6 +8,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const pollId = Number(params.id);
+  if (isNaN(pollId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { option_idx } = await req.json();
 
   await prisma.pollVote.upsert({

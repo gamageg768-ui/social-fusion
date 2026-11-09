@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDb } from '@/lib/db';
-import { getCurrentUser } from '@/lib/utils';
+import { getCurrentUser, serializeUser } from '@/lib/utils';
 
 function serCom(c: any, meId: number) {
   const membership = c.members?.find((m: any) => m.user_id === meId);
@@ -8,7 +8,7 @@ function serCom(c: any, meId: number) {
     id: c.id, owner_id: c.owner_id, name: c.name, description: c.description,
     avatar_url: c.avatar_url, is_private: c.is_private,
     created_at: c.created_at.toISOString(),
-    owner: c.owner ? { ...c.owner, created_at: c.owner.created_at.toISOString(), last_seen: c.owner.last_seen?.toISOString() ?? null } : undefined,
+    owner: c.owner ? serializeUser(c.owner) : undefined,
     is_member: !!membership,
     my_role: membership?.role ?? null,
     _count: c._count,

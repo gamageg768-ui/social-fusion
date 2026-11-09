@@ -7,6 +7,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const chId = Number(params.id);
+  if (isNaN(chId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const existing = await prisma.channelSubscription.findUnique({ where: { channel_id_user_id: { channel_id: chId, user_id: me.id } } });
   if (existing) {
     await prisma.channelSubscription.delete({ where: { channel_id_user_id: { channel_id: chId, user_id: me.id } } });

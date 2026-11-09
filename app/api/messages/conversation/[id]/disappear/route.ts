@@ -10,6 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const partnerId = Number(params.id);
+  if (isNaN(partnerId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { mode } = await req.json();
 
   if (!VALID_MODES.includes(mode)) return NextResponse.json({ error: 'Invalid mode' }, { status: 400 });

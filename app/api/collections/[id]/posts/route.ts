@@ -7,6 +7,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const me = await getCurrentUser();
   const meId = me?.id ?? -1;
   const colId = Number(params.id);
+  if (isNaN(colId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const items = await prisma.collectionPost.findMany({
     where: { collection_id: colId },
@@ -34,6 +35,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const colId = Number(params.id);
+  if (isNaN(colId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { post_id } = await req.json().catch(() => ({}));
 
   const col = await prisma.collection.findUnique({ where: { id: colId } });
@@ -54,6 +56,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const colId = Number(params.id);
+  if (isNaN(colId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { post_id } = await req.json().catch(() => ({}));
 
   const col = await prisma.collection.findUnique({ where: { id: colId } });

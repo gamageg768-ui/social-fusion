@@ -6,7 +6,8 @@ import { getCurrentUser, serializeUser } from '@/lib/utils';
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   const prisma = await ensureDb();
   const me = await getCurrentUser();
-  if (!me || me.id !== Number(params.id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const parsedId = Number(params.id);
+  if (isNaN(parsedId) || !me || me.id !== parsedId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const requests = await prisma.followRequest.findMany({
     where: { target_id: me.id, status: 'pending' },
@@ -30,7 +31,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const prisma = await ensureDb();
   const me = await getCurrentUser();
-  if (!me || me.id !== Number(params.id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const parsedIdPost = Number(params.id);
+  if (isNaN(parsedIdPost) || !me || me.id !== parsedIdPost) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { request_id, action } = await req.json();
 

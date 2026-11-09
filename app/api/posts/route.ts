@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDb } from '@/lib/db';
 import { getCurrentUser, serializePost } from '@/lib/utils';
+import { CreatePostSchema } from '@/lib/validation';
+import { checkRateLimit } from '@/lib/rateLimiter';
 import {
   extractHashtags,
   buildHashtagWeights,
@@ -665,45 +667,51 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+  const rl = checkRateLimit(`post-create:${ip}`, 10, 60_000);
+  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.retryAfterMs / 1000)) } });
+
   const prisma = await ensureDb();
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
-  const data = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  const parsed = CreatePostSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 400 });
+  const data = parsed.data;
+
   const reactionPollJson = (() => {
     if (!data.reaction_poll) return '';
-    const opts = (data.reaction_poll.options as { label: string; emoji: string }[])
-      ?.filter(o => o.label?.trim())
-      .slice(0, 5);
+    const opts = data.reaction_poll.options.filter(o => o.label?.trim()).slice(0, 5);
     if (!opts || opts.length < 2) return '';
-    return JSON.stringify({ question: data.reaction_poll.question || 'How does this make you feel?', options: opts });
+    return JSON.stringify({ question: 'How does this make you feel?', options: opts });
   })();
 
   const post = await prisma.post.create({
     data: {
       user_id: me.id,
-      content: data.content || '',
-      image_url: data.image_url || '',
-      alt_text: data.alt_text || '',
-      post_type: data.post_type || 'post',
-      visibility: data.visibility || 'everyone',
-      is_anonymous: !!data.is_anonymous,
+      content: data.content,
+      image_url: data.image_url,
+      alt_text: data.alt_text,
+      post_type: data.post_type,
+      visibility: data.visibility,
+      is_anonymous: data.is_anonymous,
       reaction_poll: reactionPollJson,
-      persona: data.persona || '',
+      persona: data.persona,
       ...(data.scheduled_at ? { scheduled_at: new Date(data.scheduled_at) } : {}),
       ...(data.locked_until ? { locked_until: new Date(data.locked_until) } : {}),
       ...(data.commitment_deadline ? { commitment_deadline: new Date(data.commitment_deadline) } : {}),
-      ...(data.live_widget ? { live_widget: typeof data.live_widget === 'string' ? data.live_widget : JSON.stringify(data.live_widget) } : {}),
     },
   });
 
-  if (data.poll && data.poll.question && Array.isArray(data.poll.options) && data.poll.options.length >= 2) {
-    const durationHours = Number(data.poll.duration_hours) || 24;
+  if (data.poll && data.poll.options.length >= 2) {
+    const durationHours = data.poll.duration_hours ?? 24;
     await prisma.postPoll.create({
       data: {
         post_id: post.id,
-        question: data.poll.question.trim(),
-        options: JSON.stringify(data.poll.options.filter((o: string) => o.trim())),
+        question: data.poll.question,
+        options: JSON.stringify(data.poll.options),
         ends_at: new Date(Date.now() + durationHours * 3600000),
       },
     });

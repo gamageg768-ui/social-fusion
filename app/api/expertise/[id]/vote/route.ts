@@ -8,6 +8,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const claimId = Number(params.id);
+  if (isNaN(claimId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const existing = await prisma.expertiseVote.findUnique({
     where: { claim_id_voter_id: { claim_id: claimId, voter_id: me.id } },

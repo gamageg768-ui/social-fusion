@@ -9,6 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const { quote_content } = await req.json();
   const refPostId = Number(params.id);
+  if (isNaN(refPostId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const isQuote = !!quote_content?.trim();
 
   const [post] = await Promise.all([

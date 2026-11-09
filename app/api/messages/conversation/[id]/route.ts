@@ -24,6 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (!me) return NextResponse.json([]);
 
   const partnerId = Number(params.id);
+  if (isNaN(partnerId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const beforeId = req.nextUrl.searchParams.get('before_id');
   const limit = Math.min(Number(req.nextUrl.searchParams.get('limit') ?? '100'), 100);
 

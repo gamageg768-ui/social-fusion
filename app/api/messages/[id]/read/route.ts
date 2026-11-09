@@ -9,6 +9,7 @@ export async function PATCH(_req: NextRequest, { params }: { params: { id: strin
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const partnerId = Number(params.id);
+  if (isNaN(partnerId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   await prisma.message.updateMany({
     where: { sender_id: partnerId, receiver_id: me.id, is_read: false },
     data: { is_read: true },

@@ -8,6 +8,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   await prisma.post.update({ where: { id: postId }, data: { view_count: { increment: 1 } } });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDb } from '@/lib/db';
 import { getCurrentUser } from '@/lib/utils';
+import { CreateCollectionSchema } from '@/lib/validation';
 
 export async function GET() {
   const prisma = await ensureDb();
@@ -24,11 +25,13 @@ export async function POST(req: NextRequest) {
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { name } = await req.json().catch(() => ({}));
-  if (!name?.trim()) return NextResponse.json({ error: 'name required' }, { status: 400 });
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  const parsed = CreateCollectionSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 400 });
 
   const col = await prisma.collection.create({
-    data: { user_id: me.id, name: name.trim() },
+    data: { user_id: me.id, name: parsed.data.name },
     include: { _count: { select: { posts: true } } },
   });
 

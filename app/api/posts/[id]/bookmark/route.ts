@@ -8,6 +8,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const existing = await prisma.bookmark.findUnique({
     where: { user_id_post_id: { user_id: me.id, post_id: postId } },
   });

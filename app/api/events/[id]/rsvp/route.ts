@@ -11,6 +11,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const { status } = await req.json().catch(() => ({}));
   if (!VALID.has(status)) return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   const eventId = Number(params.id);
+  if (isNaN(eventId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   await prisma.eventRsvp.upsert({
     where: { event_id_user_id: { event_id: eventId, user_id: me.id } },
     update: { status },
@@ -24,6 +25,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const prisma = await ensureDb();
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  await prisma.eventRsvp.deleteMany({ where: { event_id: Number(params.id), user_id: me.id } });
+  const deleteEventId = Number(params.id);
+  if (isNaN(deleteEventId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
+  await prisma.eventRsvp.deleteMany({ where: { event_id: deleteEventId, user_id: me.id } });
   return NextResponse.json({ my_rsvp: null });
 }

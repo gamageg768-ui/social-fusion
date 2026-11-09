@@ -9,6 +9,7 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const partnerId = Number(params.id);
+  if (isNaN(partnerId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const existing = await prisma.conversationMeta.findUnique({
     where: { user_id_partner_id: { user_id: me.id, partner_id: partnerId } },

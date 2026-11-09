@@ -8,6 +8,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const msgId = Number(params.id);
+  if (isNaN(msgId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { content } = await req.json();
 
   if (!content?.trim()) return NextResponse.json({ error: 'Content required' }, { status: 400 });

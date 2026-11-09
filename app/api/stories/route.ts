@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ensureDb } from '@/lib/db';
+import { serializeUser } from '@/lib/utils';
 
 export async function GET() {
   const prisma = await ensureDb();
@@ -11,6 +12,6 @@ export async function GET() {
   return NextResponse.json(stories.map(s => ({
     ...s,
     created_at: s.created_at.toISOString(),
-    user: { ...s.user, created_at: s.user.created_at.toISOString() },
+    user: serializeUser(s.user),
   })));
 }

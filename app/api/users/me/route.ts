@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDb } from '@/lib/db';
 import { getCurrentUser, serializeUser } from '@/lib/utils';
+import { UpdateProfileSchema } from '@/lib/validation';
 
 export async function GET() {
   const prisma = await ensureDb();
@@ -15,7 +16,11 @@ export async function PUT(req: NextRequest) {
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const { name, bio, location, website, avatar, cover, is_private } = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  const parsed = UpdateProfileSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 400 });
+  const { name, bio, location, website, avatar, cover, is_private } = parsed.data;
 
   const updated = await prisma.user.update({
     where: { id: me.id },

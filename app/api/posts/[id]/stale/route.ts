@@ -8,6 +8,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const post = await prisma.post.findUnique({ where: { id: postId }, select: { user_id: true } });
   if (!post || post.user_id !== me.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 

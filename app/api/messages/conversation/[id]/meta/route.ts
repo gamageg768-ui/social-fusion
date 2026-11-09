@@ -8,6 +8,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ is_muted: false, disappear_after: 'off' });
 
   const partnerId = Number(params.id);
+  if (isNaN(partnerId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const meta = await prisma.conversationMeta.findUnique({
     where: { user_id_partner_id: { user_id: me.id, partner_id: partnerId } },

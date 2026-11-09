@@ -7,6 +7,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const me = await getCurrentUser();
   const meId = me?.id ?? -1;
   const chId = Number(params.id);
+  if (isNaN(chId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const items = await prisma.channelPost.findMany({
     where: { channel_id: chId },
     include: {
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const chId = Number(params.id);
+  if (isNaN(chId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const ch = await prisma.channel.findUnique({ where: { id: chId } });
   if (!ch || ch.owner_id !== me.id) return NextResponse.json({ error: 'Only channel owner can post' }, { status: 403 });
   const data = await req.json().catch(() => ({}));

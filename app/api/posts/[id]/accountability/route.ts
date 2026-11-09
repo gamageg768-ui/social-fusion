@@ -6,6 +6,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const prisma = await ensureDb();
   const me = await getCurrentUser();
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const votes = await prisma.accountabilityVote.findMany({ where: { post_id: postId } });
   const kept = votes.filter((v: { kept: boolean }) => v.kept).length;
@@ -21,6 +22,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ error: 'No user' }, { status: 401 });
 
   const postId = Number(params.id);
+  if (isNaN(postId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const { kept } = await req.json();
 
   await prisma.accountabilityVote.upsert({

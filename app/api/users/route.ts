@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ensureDb } from '@/lib/db';
+import { serializeUser } from '@/lib/utils';
 
 export async function GET(req: NextRequest) {
   const prisma = await ensureDb();
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
   if (username) {
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user) return NextResponse.json([]);
-    return NextResponse.json([{ ...user, created_at: user.created_at.toISOString() }]);
+    return NextResponse.json([serializeUser(user)]);
   }
 
   const users = await prisma.user.findMany({
@@ -19,5 +20,5 @@ export async function GET(req: NextRequest) {
     take: 20,
   });
 
-  return NextResponse.json(users.map(u => ({ ...u, created_at: u.created_at.toISOString() })));
+  return NextResponse.json(users.map(serializeUser));
 }

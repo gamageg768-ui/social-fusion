@@ -6,8 +6,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const prisma = await ensureDb();
   const me = await getCurrentUser();
   const meId = me?.id ?? -1;
+  const parsedId = Number(params.id);
+  if (isNaN(parsedId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const c = await prisma.community.findUnique({
-    where: { id: Number(params.id) },
+    where: { id: parsedId },
     include: { owner: true, members: { include: { user: true } }, _count: { select: { members: true, posts: true } } },
   });
   if (!c) return NextResponse.json({ error: 'Not found' }, { status: 404 });

@@ -3,8 +3,10 @@ import { ensureDb } from '@/lib/db';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const prisma = await ensureDb();
+  const parsedId = Number(params.id);
+  if (isNaN(parsedId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const tips = await prisma.tip.findMany({
-    where: { receiver_id: Number(params.id) },
+    where: { receiver_id: parsedId },
     include: { sender: true },
     orderBy: { created_at: 'desc' },
     take: 20,

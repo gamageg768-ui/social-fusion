@@ -7,8 +7,10 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const me = await getCurrentUser();
   const meId = me?.id ?? -1;
 
+  const parsedId = Number(params.id);
+  if (isNaN(parsedId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const follows = await prisma.follow.findMany({
-    where: { following_id: Number(params.id) },
+    where: { following_id: parsedId },
     include: {
       follower: true,
     },

@@ -7,6 +7,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const me = await getCurrentUser();
   if (!me) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const comId = Number(params.id);
+  if (isNaN(comId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   const existing = await prisma.communityMember.findUnique({ where: { community_id_user_id: { community_id: comId, user_id: me.id } } });
   if (existing) {
     await prisma.communityMember.delete({ where: { community_id_user_id: { community_id: comId, user_id: me.id } } });

@@ -9,6 +9,7 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json([]);
 
   const partnerId = Number(params.id);
+  if (isNaN(partnerId)) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   const messages = await prisma.message.findMany({
     where: {
